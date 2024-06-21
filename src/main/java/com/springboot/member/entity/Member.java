@@ -42,6 +42,17 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private List<Order> orders = new ArrayList<>();
 
+    @OneToOne
+    @JoinColumn(name = "STAMP_ID")
+    private Stamp stamp;
+
+    public void setStamp(Stamp stamp) {
+        if (!this.stamp.equals(stamp)) {
+            stamp.setMember(this);
+        }
+        this.stamp = stamp;
+    }
+
     public Member(String email) {
         this.email = email;
     }

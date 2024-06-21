@@ -1,27 +1,39 @@
 package com.springboot.order.service;
 
+import com.springboot.coffee.entity.Coffee;
+import com.springboot.coffee.repository.CoffeeRepository;
+import com.springboot.coffee.service.CoffeeService;
 import com.springboot.exception.BusinessLogicException;
 import com.springboot.exception.ExceptionCode;
 import com.springboot.member.service.MemberService;
 import com.springboot.order.entity.Order;
+import com.springboot.order.entity.OrderCoffee;
 import com.springboot.order.repository.OrderRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
     private final MemberService memberService;
     private final OrderRepository orderRepository;
+    private final CoffeeService coffeeService;
+    private final CoffeeRepository coffeeRepository;
 
     public OrderService(MemberService memberService,
-                        OrderRepository orderRepository) {
+                        OrderRepository orderRepository, CoffeeService coffeeService, CoffeeRepository coffeeRepository) {
         this.memberService = memberService;
         this.orderRepository = orderRepository;
+        this.coffeeService = coffeeService;
+        this.coffeeRepository = coffeeRepository;
     }
 
     public Order createOrder(Order order) {
@@ -29,6 +41,15 @@ public class OrderService {
         memberService.findVerifiedMember(order.getMember().getMemberId());
 
         // TODO 커피가 존재하는지 조회하는 로직이 포함되어야 합니다.
+        List<Long> coffeeIds = order.getOrderCoffees().stream()
+                .map(orderCoffee -> orderCoffee.getCoffee().getCoffeeId())
+                .collect(Collectors.toList());
+
+        List<Coffee> coffee = coffeeRepository.findAllById(coffeeIds);
+
+        if (ObjectUtils.isEmpty(coffee)) {
+            throw new BusinessLogicException(ExceptionCode.COFFEE_NOT_FOUND);
+        }
 
         return orderRepository.save(order);
     }
